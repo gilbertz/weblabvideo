@@ -35,7 +35,6 @@ public:
 	CWnd* activex;
 	bool m_bPlayStat;
 
-
 	// 若为true则终止线程  
     bool m_bTerminateThread; 
 

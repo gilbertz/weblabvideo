@@ -19,6 +19,7 @@ UINT  ServerRecvThread(LPVOID lpParm );
 sockaddr_in addr = {0};
 
 #define TIMER_ZOOM  0
+#define TIMER_TICK  0
 #define KCSDEMO_FILEPATH  "C:\\"
 // 前端句柄
 #define PUHANDLE        unsigned long
@@ -54,6 +55,7 @@ IMPLEMENT_DYNAMIC(CMainDlg, CDialog)
 	bMute=1;
 	IsCoperate=true;
 
+
 	
 
 }
@@ -86,58 +88,133 @@ BOOL CMainDlg::OnInitDialog()
 {
 	CDialog::OnInitDialog();  
 
-	 //初始化环境  
-    WSADATA wd = {0};  
-    WSAStartup(MAKEWORD(SOCK_VER,0),&wd);
-  
-
-    //创建socket套接字  
-    socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);  
-
-    MessageBox("socket 创建成功！！");  
-
-	addr.sin_family = AF_INET;//IPV4
-	addr.sin_port = htons(61557);//端口
-	addr.sin_addr.s_addr = inet_addr("202.120.37.243");//IP
-	int nBind = bind(g_sock,(sockaddr *)&addr,sizeof(addr));//成功返回0
-
-	    //获得已经绑定的端口号  
-    int nLen = sizeof(addr);  
-    getsockname(g_sock,(sockaddr *)&addr,&nLen);  
-
-	CString str;
-	str.Format( "socket 成功绑定到端口：%d,等待数据。。。", ntohs(addr.sin_port) );
-	AfxMessageBox( str ); 
-
-	 m_bTerminateThread = false; 
-	 AfxBeginThread(ServerRecvThread, this, THREAD_PRIORITY_NORMAL, 0, 0, NULL);  
+	m_bTerminateThread = false; 
+	AfxBeginThread(ServerRecvThread, this, THREAD_PRIORITY_NORMAL, 0, 0, NULL); 
 	 return TRUE; 
 }
 
 UINT  ServerRecvThread(LPVOID lpParm )
 {
-    CString str;
+// //   addr.sin_family = AF_INET;//IPV4
+//	//addr.sin_port = htons(61557);//端口
+//	//addr.sin_addr.s_addr = inet_addr("202.120.37.243");//IP
+//	//int nBind = bind(g_sock,(sockaddr *)&addr,sizeof(addr));//成功返回0
+//
+//	//    //获得已经绑定的端口号  
+// //   int nLen = sizeof(addr);  
+// //   getsockname(g_sock,(sockaddr *)&addr,&nLen);  
+//
+//	//CString str;
+//	//str.Format( "socket 成功绑定到端口：%d,等待数据。。。", ntohs(addr.sin_port) );
+//	//AfxMessageBox( str ); 
+//
+// //   //等待并接收数据  
+// //   sockaddr_in saClient = {0};                                 
+// //   int nFromLen = sizeof(saClient);  
+// //   char szBuff[256]={0};
+//	//CString  m_str(szBuff);  
+//	//str.Format( szBuff );
+//	//AfxMessageBox( str ); 
+// //   recvfrom(g_sock,szBuff,256,0,(sockaddr *)&saClient,&nFromLen);  
+//
+//	//str.Format( "收到的信息：%s,从%s,%d ",szBuff,inet_ntoa(saClient.sin_addr),ntohs(saClient.sin_port) );
+//	//AfxMessageBox( str ); 
+//
+//	//if (strcmp(szBuff,"")==0)
+//	//{
+//	//		AfxMessageBox( "aaaaaaaa" );
+//	//	::SendMessage(AfxGetMainWnd()->m_hWnd,WM_MYMSG,(WPARAM)szBuff,0);
+//	//}
+//
+
+
+
+	CMainDlg *dlg = (CMainDlg*)lpParm;
+    //初始化环境  
+    WSADATA wd = {0};  
+    int nStart = WSAStartup(MAKEWORD(SOCK_VER,0),&wd);//函数成功返回0，失败返回错误代码  
+    if (0 != nStart)  
+    {//错误处理  
+        return 0;  
+    }  
+  
+    if (2 != LOBYTE(wd.wVersion))  
+    {  
+        return 0;  
+    }  
+  
+    //创建socket套接字  
+    g_sock = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);  
+    if (INVALID_SOCKET == g_sock)  
+    {  
+        ErrMsg(WSAGetLastError());  
+        return 0;  
+    }  
+
+    AfxMessageBox("socket 创建成功！！");  
+	//while(true)
+	//{
+	//		Sleep(3000);
+	//		AfxMessageBox("！！"); 
+
+	//}
+	 //绑定  
+    sockaddr_in addr = {0};  
+    addr.sin_family = AF_INET;  
+    addr.sin_port = htons(61555);  
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1");  
+  
+    int nBind = bind(g_sock,(sockaddr *)&addr,sizeof(addr));//成功返回0  
+    if (0 != nBind)  
+    {  
+        ErrMsg(WSAGetLastError()); 
+		AfxMessageBox("error"); 
+        return 0;  
+    }  
+  
+    //获得已经绑定的端口号  
+    int nLen = sizeof(addr);  
+    getsockname(g_sock,(sockaddr *)&addr,&nLen);  
+  
+	CString str;
+	str.Format( "socket 成功绑定到端口：%d,等待数据。。。", ntohs(addr.sin_port) );
+	AfxMessageBox( str ); 
+ 
+	
+	 while(!dlg->m_bTerminateThread)  
+	   {  
+
     //等待并接收数据  
-    sockaddr_in saClient = {0};                                 
+    sockaddr_in saClient = {0};  
     int nFromLen = sizeof(saClient);  
-    char szBuff[256]={0};
-	CString  m_str(szBuff);  
-	str.Format( szBuff );
-	AfxMessageBox( str ); 
+    char szBuff[256] = {0};  
     recvfrom(g_sock,szBuff,256,0,(sockaddr *)&saClient,&nFromLen);  
-
-	str.Format( "收到的信息：%s,从%s,%d ",szBuff,inet_ntoa(saClient.sin_addr),ntohs(saClient.sin_port) );
-	AfxMessageBox( str ); 
-
-	if (strcmp(szBuff,"")==0)
+	if (strcmp(szBuff,"")!=0)
 	{
-			AfxMessageBox( "aaaaaaaa" );
-		::SendMessage(AfxGetMainWnd()->m_hWnd,WM_MYMSG,(WPARAM)szBuff,0);
+    str.Format( "收到的信息：%s,从%s,%d ",szBuff,inet_ntoa(saClient.sin_addr),ntohs(saClient.sin_port) );
+	AfxMessageBox( str ); 
+    //向客户端发送回应  
+    strcpy_s(szBuff,"OK!");  
+    int nSent = sendto(g_sock,szBuff,strlen(szBuff)+1,0,(sockaddr *)&saClient,sizeof(saClient));  
+  
+    if (0 == nSent)  
+    {  
+        ErrMsg(WSAGetLastError());  
+    }  
+    else  
+    {  
+        AfxMessageBox("成功发出回应！！");  
+
+  
+    } 
 	}
+
+	 }
 
 	return 0;  
 
 }
+
 void CMainDlg::UDP(char szBuff[])
 {   
 	//发送数据包
@@ -246,6 +323,7 @@ void CMainDlg::OnLButtonDown(UINT nFlags, CPoint point)
 
 void CMainDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {   
+	UDP("101");
 	// 获得父窗口的句柄
 	if(!IsCoperate)
 	{
@@ -523,10 +601,11 @@ void CMainDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 LRESULT CMainDlg::OnMyMsgHandler(WPARAM wParam, LPARAM lParam)
 {
-	CString str;
-	char *pStr0= (char *)wParam; 
-	str.Format(_T("%S"),pStr0);
-	AfxMessageBox("HAHHA");
-	AfxMessageBox(str);
+	AfxMessageBox("时间到了"); 
+	//CString str;
+	//char *pStr0= (char *)wParam; 
+	//str.Format(_T("%S"),pStr0);
+	//AfxMessageBox("HAHHA");
+	//AfxMessageBox(str);
 	return 0;
 }

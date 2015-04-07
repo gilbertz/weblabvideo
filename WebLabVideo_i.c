@@ -6,7 +6,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Tue Apr 07 21:24:28 2015
+/* at Tue Apr 07 22:36:33 2015
  */
 /* Compiler settings for WebLabVideo.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
