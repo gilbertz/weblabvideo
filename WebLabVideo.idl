@@ -1,0 +1,52 @@
+// WebLabVideo.idl : ActiveX 控件项目的类型库源。
+
+// 此文件将由 MIDL 编译器工具处理以
+// 产生类型库(WebLabVideo.tlb)，该类型库将成为
+// WebLabVideo.ocx.
+
+#include <olectl.h>
+#include <idispids.h>
+
+[ uuid(A16A48C7-51CE-4C9E-8AB1-A51761905EA3), version(1.0),
+  control ]
+library WebLabVideoLib
+{
+	importlib(STDOLE_TLB);
+
+	//  CWebLabVideoCtrl 的主调度接口
+	[ 
+		uuid(29D4B94A-A38F-4EE5-B488-773C7B93325C)	
+	]
+	dispinterface _DWebLabVideo
+	{
+		properties:
+		methods:
+
+			[id(DISPID_ABOUTBOX)] void AboutBox();
+	};
+
+	//  CWebLabVideoCtrl 的事件调度接口
+
+	[ 
+		uuid(DC1DA45A-7801-48C9-8E67-E615CFC402B1)	
+	]
+	dispinterface _DWebLabVideoEvents
+	{
+		properties:
+			//  事件接口没有任何属性
+
+		methods:
+			[id(1)] void MyEvent(BSTR msg);
+	};
+
+	//  CWebLabVideoCtrl 的类信息
+	[
+		uuid(1255C724-2D2E-4FDF-9138-A78330C49BD1), licensed
+	]
+	coclass WebLabVideo
+	{
+		[default] dispinterface _DWebLabVideo;
+		[default, source] dispinterface _DWebLabVideoEvents;
+	};
+
+};
