@@ -101,6 +101,14 @@ BOOL CMainDlg::OnInitDialog()
 	addr.sin_addr.s_addr = inet_addr("202.120.37.243");//IP
 	int nBind = bind(g_sock,(sockaddr *)&addr,sizeof(addr));//成功返回0
 
+	    //获得已经绑定的端口号  
+    int nLen = sizeof(addr);  
+    getsockname(g_sock,(sockaddr *)&addr,&nLen);  
+
+	CString str;
+	str.Format( "socket 成功绑定到端口：%d,等待数据。。。", ntohs(addr.sin_port) );
+	AfxMessageBox( str ); 
+
 	 m_bTerminateThread = false; 
 	 AfxBeginThread(ServerRecvThread, this, THREAD_PRIORITY_NORMAL, 0, 0, NULL);  
 	 return TRUE; 
@@ -108,29 +116,22 @@ BOOL CMainDlg::OnInitDialog()
 
 UINT  ServerRecvThread(LPVOID lpParm )
 {
-  
-
-    //获得已经绑定的端口号  
-    int nLen = sizeof(addr);  
-    getsockname(g_sock,(sockaddr *)&addr,&nLen);  
-
-	CString str;
-	str.Format( "socket 成功绑定到端口：%d,等待数据。。。", ntohs(addr.sin_port) );
-	AfxMessageBox( str ); 
-  
+    CString str;
     //等待并接收数据  
     sockaddr_in saClient = {0};                                 
     int nFromLen = sizeof(saClient);  
-    char szBuff[256];  
-	str.Format( "信息：%s",szBuff );
+    char szBuff[256]={0};
+	CString  m_str(szBuff);  
+	str.Format( szBuff );
 	AfxMessageBox( str ); 
     recvfrom(g_sock,szBuff,256,0,(sockaddr *)&saClient,&nFromLen);  
 
 	str.Format( "收到的信息：%s,从%s,%d ",szBuff,inet_ntoa(saClient.sin_addr),ntohs(saClient.sin_port) );
 	AfxMessageBox( str ); 
 
-	if (strcmp(szBuff,"")!=0)
+	if (strcmp(szBuff,"")==0)
 	{
+			AfxMessageBox( "aaaaaaaa" );
 		::SendMessage(AfxGetMainWnd()->m_hWnd,WM_MYMSG,(WPARAM)szBuff,0);
 	}
 
