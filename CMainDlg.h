@@ -41,6 +41,7 @@ public:
 	// 若为true则终止线程  
     bool m_bTerminateThread; 
 
+
 	void CMainDlg::OnTimer(UINT nIDEvent);
 
 	BOOL CMainDlg::LocPic(CString &strFileName);

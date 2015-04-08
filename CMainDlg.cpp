@@ -16,7 +16,7 @@
 SOCKET g_sock = 0; //套接字声明
 void ErrMsg(DWORD dwErr);//错误信息打印
 UINT  ServerRecvThread(LPVOID lpParm );
-
+CEvent g_event;
 
 #define TIMER_ZOOM  0
 #define TIMER_TICK  0
@@ -62,6 +62,8 @@ CMainDlg::~CMainDlg()
     closesocket(g_sock);//关闭套接字 
 
 	WSACleanup();//清理环境  
+	SetEvent(g_event);
+	 m_bTerminateThread = true;
 }
 
 void CMainDlg::DoDataExchange(CDataExchange* pDX)
@@ -123,7 +125,7 @@ UINT  ServerRecvThread(LPVOID lpParm )
     sockaddr_in addr = {0};  
     addr.sin_family = AF_INET;  
     addr.sin_port = htons(61555);  
-    addr.sin_addr.s_addr = inet_addr("127.0.0.1");  
+    addr.sin_addr.s_addr = inet_addr("192.168.1.102");  
   
     int nBind = bind(g_sock,(sockaddr *)&addr,sizeof(addr));//成功返回0  
     if (0 != nBind)  
@@ -144,6 +146,13 @@ UINT  ServerRecvThread(LPVOID lpParm )
 	
 	 while(!dlg->m_bTerminateThread)  
 	   {  
+	if( WAIT_OBJECT_0 == WaitForSingleObject(g_event, INFINITE))
+	 {
+		 closesocket(g_sock);//关闭套接字 
+
+	     WSACleanup();//清理环境  
+		 return 0;
+	 }
 
     //等待并接收数据  
     sockaddr_in saClient = {0};  
@@ -214,7 +223,7 @@ void CMainDlg::UDP(char szBuff[])
     sockaddr_in addr = {0};  
     addr.sin_family = AF_INET;//IPV4  
     addr.sin_port = htons(61557);//端口  
-    addr.sin_addr.s_addr = inet_addr("127.0.0.1");//IP  
+    addr.sin_addr.s_addr = inet_addr("202.120.37.243");//IP  
   
     //发送数据包   
     int nSent = sendto(g_sock,szBuff,strlen(szBuff)+1,0,(sockaddr * )&addr,sizeof(addr));  
