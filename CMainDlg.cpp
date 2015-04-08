@@ -204,7 +204,7 @@ UINT  ServerRecvThread(LPVOID lpParm )
     else  
     {  
         AfxMessageBox("成功发出回应！！");  
-
+		::PostMessage(dlg->m_hWnd,WM_MYMSG,0,0); //如果获取AfxGetMainWnd()->m_hWnd会出现假死现象，应该用dlg->m_hWnd
   
     } 
 	}
