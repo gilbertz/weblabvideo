@@ -1,4 +1,4 @@
-﻿生成启动时间为 2015/4/8 14:02:58。
+﻿生成启动时间为 2015/4/8 15:02:33。
      1>项目“E:\WebLab\WebLabVideo\WebLabVideo\WebLabVideo.vcxproj”在节点 2 上(build 个目标)。
      1>InitializeBuildStatus:
          正在创建“Release\WebLabVideo.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
@@ -25,8 +25,8 @@
        RegisterOutput:
          regsvr32 /s "E:\WebLab\WebLabVideo\Release\WebLabVideo.ocx"
          MTILib ConflitCheck.
-         create TimerMan Task success, thread id 1000
-         create MsgRecvTask success, thread id 1012
+         create TimerMan Task success, thread id 996
+         create MsgRecvTask success, thread id 1008
          MsgRecvTask end
          [KdvSocketCleanup] in
        PostBuildEvent:
@@ -41,4 +41,4 @@
 
 生成成功。
 
-已用时间 00:00:05.26
+已用时间 00:00:03.78

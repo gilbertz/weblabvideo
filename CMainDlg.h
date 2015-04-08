@@ -1,6 +1,9 @@
 
-#define WM_MYMSG WM_USER+100
-
+#define WM_MYMSG1 WM_USER+101
+#define WM_MYMSG2 WM_USER+102
+#define WM_MYMSG3 WM_USER+103
+#define WM_MYMSG4 WM_USER+104
+#define WM_MYMSG5 WM_USER+105
 
 // CMainDlg 对话框
 class CMainDlg : public CDialog
@@ -52,7 +55,12 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
 
 	virtual BOOL OnInitDialog();  
-	afx_msg LRESULT OnMyMsgHandler(WPARAM wParam, LPARAM lParam);
+
+	afx_msg LRESULT OnMyMsgHandlerShow(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnMyMsgHandlerPhoto(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnMyMsgHandlerVideo(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnMyMsgHandlerOperate(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnMyMsgHandlerNOperate(WPARAM wParam, LPARAM lParam);
 
 	DECLARE_MESSAGE_MAP()
 
