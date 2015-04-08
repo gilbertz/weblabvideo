@@ -20,7 +20,7 @@ public:
 	void ControlCamera( ECamControl eType, BYTE byData );
 	//确定点是否在视频界面
 	BOOL CMainDlg::IsPtInRect(CPoint point);
-	void CMainDlg::UDP(char szBuff[]);
+	void CMainDlg::TCPSend(char szBuff[]);
 
 	CPoint m_start;
 	CPoint m_move;
@@ -40,7 +40,7 @@ public:
 
 	// 若为true则终止线程  
     bool m_bTerminateThread; 
-
+	BOOL ConnectSocket(CMainDlg * pClient);
 
 	void CMainDlg::OnTimer(UINT nIDEvent);
 
@@ -54,8 +54,7 @@ public:
 protected:
 
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持
-
-	virtual BOOL OnInitDialog();  
+ 
 
 	afx_msg LRESULT OnMyMsgHandlerShow(WPARAM wParam, LPARAM lParam);
 	afx_msg LRESULT OnMyMsgHandlerPhoto(WPARAM wParam, LPARAM lParam);
@@ -76,6 +75,7 @@ private:
 	bool Audio;
 	bool m_bIsLocRec;
 	HWND m_hWndParent;
+	
 public:
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);

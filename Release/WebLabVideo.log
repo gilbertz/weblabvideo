@@ -1,13 +1,12 @@
-﻿生成启动时间为 2015/4/8 16:41:02。
+﻿生成启动时间为 2015/4/8 22:52:58。
      1>项目“E:\WebLab\WebLabVideo\WebLabVideo\WebLabVideo.vcxproj”在节点 2 上(build 个目标)。
      1>InitializeBuildStatus:
-         正在创建“Release\WebLabVideo.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+         正在对“Release\WebLabVideo.unsuccessfulbuild”执行 Touch 任务。
        Midl:
          所有输出均为最新。
        ClCompile:
          所有输出均为最新。
-         D:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /IE:\WebLab\PVLab0111\WebLabVideo\sdk\release /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D _WINDOWS /D NDEBUG /D _USRDLL /D _WINDLL /D _MBCS /D _AFXDLL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"Release\WebLabVideo.pch" /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt CMainDlg.cpp
-         CMainDlg.cpp
+         所有输出均为最新。
        ResourceCompile:
          所有输出均为最新。
        Link:
@@ -25,8 +24,8 @@
        RegisterOutput:
          regsvr32 /s "E:\WebLab\WebLabVideo\Release\WebLabVideo.ocx"
          MTILib ConflitCheck.
-         create TimerMan Task success, thread id 1000
-         create MsgRecvTask success, thread id 1012
+         create TimerMan Task success, thread id 996
+         create MsgRecvTask success, thread id 1008
          MsgRecvTask end
          [KdvSocketCleanup] in
        PostBuildEvent:
@@ -41,4 +40,4 @@
 
 生成成功。
 
-已用时间 00:00:03.73
+已用时间 00:00:04.11

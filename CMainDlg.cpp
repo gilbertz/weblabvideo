@@ -15,8 +15,9 @@
 //变量和函数的声明
 SOCKET g_sock = 0; //套接字声明
 void ErrMsg(DWORD dwErr);//错误信息打印
-UINT  ServerRecvThread(LPVOID lpParm );
-CEvent g_event;
+DWORD WINAPI ClientThread(LPVOID lpParm );
+BOOL socket_Select(SOCKET hSocket,DWORD nTimeOut,BOOL bRead);
+BOOL  isServerOn;
 
 #define TIMER_ZOOM  0
 #define TIMER_TICK  0
@@ -53,17 +54,14 @@ IMPLEMENT_DYNAMIC(CMainDlg, CDialog)
 	wPort = 0;
 	byADecChn = 0;
 	bMute=1;
+	isServerOn = FALSE;
+	CreateThread(0,0,ClientThread,this,0,NULL);
 
 }
 
 CMainDlg::~CMainDlg()
 {
-	//关闭资源  
-    closesocket(g_sock);//关闭套接字 
 
-	WSACleanup();//清理环境  
-	SetEvent(g_event);
-	 m_bTerminateThread = true;
 }
 
 void CMainDlg::DoDataExchange(CDataExchange* pDX)
@@ -86,164 +84,145 @@ BEGIN_MESSAGE_MAP(CMainDlg, CDialog)
 	ON_MESSAGE(WM_MYMSG5,OnMyMsgHandlerNOperate)
 END_MESSAGE_MAP()
 
-BOOL CMainDlg::OnInitDialog()
+
+DWORD WINAPI ClientThread(  LPVOID lpParameter)
 {
-	CDialog::OnInitDialog();  
+	CMainDlg * pClient = (CMainDlg *)lpParameter;
 
-	m_bTerminateThread = false; 
-	AfxBeginThread(ServerRecvThread, this, THREAD_PRIORITY_NORMAL, 0, 0, NULL); 
-	return TRUE; 
-}
-
-UINT  ServerRecvThread(LPVOID lpParm )
-{
-	CMainDlg *dlg = (CMainDlg*)lpParm;
-    //初始化环境  
-    WSADATA wd = {0};  
-    int nStart = WSAStartup(MAKEWORD(SOCK_VER,0),&wd);//函数成功返回0，失败返回错误代码  
-    if (0 != nStart)  
-    {//错误处理  
-        return 0;  
-    }  
-  
-    if (2 != LOBYTE(wd.wVersion))  
-    {  
-        return 0;  
-    }  
-  
-    //创建socket套接字  
-    g_sock = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);  
-    if (INVALID_SOCKET == g_sock)  
-    {  
-        ErrMsg(WSAGetLastError());  
-        return 0;  
-    }  
-
-    AfxMessageBox("socket 创建成功！！");  
-
-	 //绑定  
-    sockaddr_in addr = {0};  
-    addr.sin_family = AF_INET;  
-    addr.sin_port = htons(61555);  
-    addr.sin_addr.s_addr = inet_addr("192.168.1.102");  
-  
-    int nBind = bind(g_sock,(sockaddr *)&addr,sizeof(addr));//成功返回0  
-    if (0 != nBind)  
-    {  
-        ErrMsg(WSAGetLastError()); 
-		AfxMessageBox("error"); 
-        return 0;  
-    }  
-  
-    //获得已经绑定的端口号  
-    int nLen = sizeof(addr);  
-    getsockname(g_sock,(sockaddr *)&addr,&nLen);  
-  
-	CString str;
-	str.Format( "socket 成功绑定到端口：%d,等待数据。。。", ntohs(addr.sin_port) );
-	AfxMessageBox( str ); 
- 
-	
-	 while(!dlg->m_bTerminateThread)  
-	   {  
-	if( WAIT_OBJECT_0 == WaitForSingleObject(g_event, INFINITE))
-	 {
-		 closesocket(g_sock);//关闭套接字 
-
-	     WSACleanup();//清理环境  
-		 return 0;
-	 }
-
-    //等待并接收数据  
-    sockaddr_in saClient = {0};  
-    int nFromLen = sizeof(saClient);  
-    char szBuff[256] = {0};  
-    recvfrom(g_sock,szBuff,256,0,(sockaddr *)&saClient,&nFromLen);  
-	if (strcmp(szBuff,"")!=0)
+	if(pClient->ConnectSocket(pClient))
 	{
-    str.Format( "收到的信息：%s,从%s,%d ",szBuff,inet_ntoa(saClient.sin_addr),ntohs(saClient.sin_port) );
-	AfxMessageBox( str ); 
-    //向客户端发送回应  
-    int nSent = sendto(g_sock,szBuff,strlen(szBuff)+1,0,(sockaddr *)&saClient,sizeof(saClient));  
-  
-    if (0 == nSent)  
-    {  
-        ErrMsg(WSAGetLastError());  
-    }  
-    else  
-    {  
-        AfxMessageBox("成功发出回应！！"); 
-		if (strcmp(szBuff,"show")==0)
-		    ::PostMessage(dlg->m_hWnd,WM_MYMSG1,0,0); //如果获取AfxGetMainWnd()->m_hWnd会出现假死现象，应该用dlg->m_hWnd
-		if (strcmp(szBuff,"photo")==0)
-			::PostMessage(dlg->m_hWnd,WM_MYMSG2,0,0);  
-		if (strcmp(szBuff,"video")==0)
-			::PostMessage(dlg->m_hWnd,WM_MYMSG3,0,0);
-		if (strcmp(szBuff,"operate")==0)
-			::PostMessage(dlg->m_hWnd,WM_MYMSG4,0,0);
-		if (strcmp(szBuff,"noperate")==0)
-			::PostMessage(dlg->m_hWnd,WM_MYMSG5,0,0);
-        *szBuff = '\0';//清空缓冲区  
-    } 
-	}
 
 	}
-
-	return 0;  
-
+	else
+	{
+		AfxMessageBox("socket error");  
+	}
+	return 0;
 }
 
-void CMainDlg::UDP(char szBuff[])
-{   	
-	//初始化WinSock环境  
-    WSADATA wd = {0};  
-    int nStart = WSAStartup(MAKEWORD(SOCK_VER,0),&wd);  
-    if (0 != nStart)  
-    {  
-        return ;  
-    }  
-  
-    if (LOBYTE(wd.wVersion) != 2)  
-    {  
-        return ;  
-    }  
-  
-    //创建一个UDP SOCKET   
-  
-    g_sock = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);  
-    if (INVALID_SOCKET == g_sock)  
-    {  
-        ErrMsg(WSAGetLastError());  
-        return ;  
-    }  
-  
-     AfxMessageBox("socket 创建成功！！");  
-  
-    //发送数据的目标地址  
-    sockaddr_in addr = {0};  
-    addr.sin_family = AF_INET;//IPV4  
-    addr.sin_port = htons(61557);//端口  
-    addr.sin_addr.s_addr = inet_addr("202.120.37.243");//IP  
-  
-    //发送数据包   
-    int nSent = sendto(g_sock,szBuff,strlen(szBuff)+1,0,(sockaddr * )&addr,sizeof(addr));  
-    if (0 == nSent)  
-    {  
-        ErrMsg(WSAGetLastError());  
-    }  
-    else  
-    {  
-         AfxMessageBox("信息成功发送，等待回应。。\n");  
-    }  
 
-}
-
-//打印错误信息函数
-void ErrMsg(DWORD dwErr)
+BOOL CMainDlg::ConnectSocket(CMainDlg * pClient)
 {
-	char szErr[1024] = {0};
-	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,NULL,dwErr,MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),(LPSTR)szErr,1024,NULL);
-	printf(szErr);
+
+	while (TRUE)
+	{
+		while (!isServerOn )
+		{ 
+			Sleep(1000);
+			//初始化环境  
+			WSADATA wd = {0};  
+			int nStart = WSAStartup(MAKEWORD(SOCK_VER,0),&wd);//函数成功返回0，失败返回错误代码  
+			if (0 != nStart)  
+			{   //错误处理  
+				//return FALSE;  
+			}  
+
+			if (2 != LOBYTE(wd.wVersion))  
+			{  
+				//return FALSE;  
+			}  
+
+			//创建socket套接字  
+			g_sock = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP); 
+			if (INVALID_SOCKET == g_sock)  
+			{  
+				MessageBox(_T("创建socket失败"));
+				//return  FALSE;  
+			}  
+
+			//绑定  
+			sockaddr_in addr = {0};  
+			addr.sin_family = AF_INET;  
+			addr.sin_port = htons(61557);  
+			addr.sin_addr.s_addr = inet_addr("202.120.37.243");  
+
+			if (SOCKET_ERROR != connect(g_sock,(sockaddr *)&addr,sizeof(addr)))
+			{
+                 isServerOn =TRUE;
+				 AfxMessageBox("socket 创建成功！！");  
+			}
+			
+		}
+		
+
+		if (socket_Select(g_sock,100,TRUE))
+		{
+			AfxMessageBox("socket ！！");  
+			char szMsg[256] = {0};
+			int iRead = recv(g_sock,szMsg,256,0);
+			if (iRead > 0)
+			{
+				AfxMessageBox(szMsg);
+				//AfxMessageBox(strlen(szMsg));
+				CString csMsg;
+				csMsg= szMsg;
+				csMsg = csMsg.Left(4);
+				if (strcmp(csMsg,"show")==0)
+					::PostMessage(pClient->m_hWnd,WM_MYMSG1,0,0);
+				if (strcmp(csMsg,"phot")==0)
+					::PostMessage(pClient->m_hWnd,WM_MYMSG2,0,0);  
+				if (strcmp(csMsg,"vide")==0)
+					::PostMessage(pClient->m_hWnd,WM_MYMSG3,0,0);
+				if (strcmp(csMsg,"oper")==0)
+					::PostMessage(pClient->m_hWnd,WM_MYMSG4,0,0);
+				if (strcmp(csMsg,"nope")==0)
+					::PostMessage(pClient->m_hWnd,WM_MYMSG5,0,0);
+				*szMsg = '\0';
+			} 
+			else
+			{
+				AfxMessageBox(_T("已断线，请重新连接"));
+				Sleep(5000);
+				//return TRUE;
+			}
+		}
+		
+	}
+
+	return TRUE;
+}
+
+BOOL socket_Select(SOCKET hSocket,DWORD nTimeOut,BOOL bRead)
+{
+	FD_SET fdset;
+	timeval tv;
+	FD_ZERO(&fdset);
+	FD_SET(hSocket,&fdset);
+	nTimeOut = nTimeOut > 1000 ? 1000 : nTimeOut;
+	tv.tv_sec = 0;
+	tv.tv_usec = nTimeOut;
+	int iRet = 0;
+	if (bRead)
+	{
+		iRet = select(0,&fdset,NULL,NULL,&tv);
+	} 
+	else
+	{
+		iRet = select(0,NULL,&fdset,NULL,&tv);
+	}
+	if (iRet <= 0)
+	{
+		return FALSE;
+	} 
+	else if (FD_ISSET(hSocket,&fdset))
+	{
+		return TRUE;
+	}
+	return FALSE;
+}
+
+void CMainDlg::TCPSend(char szBuff[])
+{   	
+
+	int iWrite;
+	iWrite = send(g_sock,szBuff,3,0);
+	if(SOCKET_ERROR == iWrite){
+		AfxMessageBox(_T("发送错误"));
+	}
+	AfxMessageBox(_T(szBuff));
+
+	return; 
+
 }
 
 void CMainDlg::ControlCamera( ECamControl eType, BYTE byData )
@@ -339,6 +318,7 @@ void CMainDlg::OnLButtonDown(UINT nFlags, CPoint point)
 
 void CMainDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {   
+
 	if(!IsCoperate)
 	{
 		if(IsMove)
@@ -381,84 +361,84 @@ void CMainDlg::OnLButtonUp(UINT nFlags, CPoint point)
 		{
 			if (rect101.PtInRect(point))
 			{   
-				UDP("101");
+				TCPSend("101");
 
 			}
 			if (rect102.PtInRect(point))
 			{	
-				UDP("102");
+				TCPSend("102");
 
 			}
 			if (rect201.PtInRect(point))
 			{   
-				UDP("201");
+				TCPSend("201");
 
 			}
 			if (rect203.PtInRect(point))
 			{   
-				UDP("203");
+				TCPSend("203");
 
 			}
 			if (rect204.PtInRect(point))
 			{   
-				UDP("204");
+				TCPSend("204");
 
 			}
 			if (rect205.PtInRect(point))
 			{   
-				UDP("205");
+				TCPSend("205");
 
 			}
 			if (rect206.PtInRect(point))
 			{   
-				UDP("206");
+				TCPSend("206");
 
 			}
 
 			if (rect207.PtInRect(point))
 			{   
-				UDP("207");
+				TCPSend("207");
 
 			}
 			if (rect208.PtInRect(point))
 			{   
-				UDP("208");
+				TCPSend("208");
 
 			}
 			if (rect209.PtInRect(point))
 			{   
-				UDP("209");
+				TCPSend("209");
 
 			}
 			if (rect210.PtInRect(point))
 			{   
-				UDP("210");
+				TCPSend("210");
 
 			}
 			if (rect301.PtInRect(point))
 			{   
-				UDP("301");
+				TCPSend("301");
 
 			}
 			if (rect401.PtInRect(point))
 			{   
-				UDP("401");
+				TCPSend("401");
 
 			}
 			if (rect402.PtInRect(point))
 			{   
-				UDP("402");
+				TCPSend("402");
 
 			}
 			if (rect404.PtInRect(point))
 			{   
 
-				UDP("404");
+				TCPSend("404");
 
 			}
 			if (rectSTART.PtInRect(point))
 			{   
-				UDP("START");
+				TCPSend("STA");
 
 			}
 
@@ -468,10 +448,9 @@ void CMainDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 }
 
-
 LRESULT CMainDlg::OnMyMsgHandlerShow(WPARAM wParam, LPARAM lParam)
 {
-	AfxMessageBox("show"); 
+	AfxMessageBox("show11"); 
 	// 取得播放窗口句柄
 	hPlayWnd = GetDlgItem(IDC_STATIC_VIDEO)->GetSafeHwnd();
 
@@ -482,20 +461,20 @@ LRESULT CMainDlg::OnMyMsgHandlerShow(WPARAM wParam, LPARAM lParam)
 	DWORD dwIP; 
 	dwIP = inet_addr(strIP); 
 	m_hHandle = IPC_Connect(dwIP, IPCSDK_VSIP_PORT, "admin", "admin", &nErrcd);// TODO: 在此添加控件通知处理程序代码
-		
+
 	if ( !IPC_IsRealPlay( m_hPlayer ) )
 	{
 		//开始播放
 		int nErrCD = IPC_ERR_SUCCESS;
 		m_hPlayer = IPC_RealPlay( m_hHandle, (unsigned long)hPlayWnd, &nErrCD,
 			IPCSDK_RTP_PORT, PLAY_MAIN/*PLAY_SUB*/,  // PLAY_MAIN: 主流   PLAY_SUB: 辅流
-			IPCSDK_MEDIA_STREAM_TYPE_UDP);           // IPCSDK_MEDIA_STREAM_TYPE_UDP: UDP传输方式
+			IPCSDK_MEDIA_STREAM_TYPE_UDP);           // IPCSDK_MEDIA_STREAM_TYPE_TCPSend: TCPSend传输方式
 
 
 		if ( IPC_ERR_SUCCESS == nErrCD )
 		{                                                                
 			m_bPlayStat = true;
-			
+
 		}
 		else
 		{
