@@ -37,10 +37,6 @@ public:
 	BYTE m_byRange;
 	CWnd* activex;
 	bool m_bPlayStat;
-	BOOL m_bDragMove;
-	BOOL m_bMoving;
-	BOOL m_bDragLBDown;
-	CPoint m_pointDrag;
 
 	// 若为true则终止线程  
     bool m_bTerminateThread; 
@@ -55,11 +51,6 @@ public:
 	BOOL CMainDlg::StopLocRec(CString &strFileName);
 
 	BOOL CMainDlg::IsLocRec() ;
-
-	BOOL IsDragMove();
-
-	void CMainDlg::CenterPos(const CPoint& point);
-
 protected:
 
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 支持

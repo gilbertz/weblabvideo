@@ -18,14 +18,9 @@ void ErrMsg(DWORD dwErr);//错误信息打印
 DWORD WINAPI ClientThread(LPVOID lpParm );
 BOOL socket_Select(SOCKET hSocket,DWORD nTimeOut,BOOL bRead);
 BOOL  isServerOn;
-#define MAX_ALEC_WIDE           (unsigned char)254   //艾立克局部放大矩形最大宽度
-#define MAX_ALEC_HIGH           (unsigned char)254   //艾立克局部放大矩形最大高度
-#define MIN_ALEC_WIDE           (unsigned char)11    //艾立克局部放大矩形最小宽度
-#define MIN_ALEC_HIGH           (unsigned char)11    //艾立克局部放大矩形最小高度
 
 #define TIMER_ZOOM  0
-#define TIMER_DRAG_MOVE  1
-
+#define TIMER_TICK  0
 #define KCSDEMO_FILEPATH  "C:\\"
 // 前端句柄
 #define PUHANDLE        unsigned long
@@ -59,8 +54,6 @@ IMPLEMENT_DYNAMIC(CMainDlg, CDialog)
 	wPort = 0;
 	byADecChn = 0;
 	bMute=1;
-	m_bDragMove    = FALSE;
-	m_bMoving      = FALSE;
 	isServerOn = FALSE;
 	CreateThread(0,0,ClientThread,this,0,NULL);
 
@@ -115,7 +108,7 @@ BOOL CMainDlg::ConnectSocket(CMainDlg * pClient)
 	{
 		while (!isServerOn )
 		{ 
-			//Sleep(1000);
+			Sleep(1000);
 			//初始化环境  
 			WSADATA wd = {0};  
 			int nStart = WSAStartup(MAKEWORD(SOCK_VER,0),&wd);//函数成功返回0，失败返回错误代码  
@@ -145,22 +138,21 @@ BOOL CMainDlg::ConnectSocket(CMainDlg * pClient)
 
 			if (SOCKET_ERROR != connect(g_sock,(sockaddr *)&addr,sizeof(addr)))
 			{
-				isServerOn =TRUE;
-				//AfxMessageBox("socket 创建成功！！");  
-				//AfxMessageBox("网络实验系统连接成功！！");  
+                 isServerOn =TRUE;
+				 AfxMessageBox("socket 创建成功！！");  
 			}
-
+			
 		}
-
+		
 
 		if (socket_Select(g_sock,100,TRUE))
 		{
-			//AfxMessageBox("socket ！！");  
+			AfxMessageBox("socket ！！");  
 			char szMsg[256] = {0};
 			int iRead = recv(g_sock,szMsg,256,0);
 			if (iRead > 0)
 			{
-				//AfxMessageBox(szMsg);
+				AfxMessageBox(szMsg);
 				//AfxMessageBox(strlen(szMsg));
 				CString csMsg;
 				csMsg= szMsg;
@@ -179,14 +171,12 @@ BOOL CMainDlg::ConnectSocket(CMainDlg * pClient)
 			} 
 			else
 			{
-				//AfxMessageBox(_T("已断线，请重新连接"));
-				isServerOn = FALSE;
-				closesocket(g_sock);
-				//Sleep(5000);
+				AfxMessageBox(_T("已断线，请重新连接"));
+				Sleep(5000);
 				//return TRUE;
 			}
 		}
-
+		
 	}
 
 	return TRUE;
@@ -229,7 +219,7 @@ void CMainDlg::TCPSend(char szBuff[])
 	if(SOCKET_ERROR == iWrite){
 		AfxMessageBox(_T("发送错误"));
 	}
-	//AfxMessageBox(_T(szBuff));
+	AfxMessageBox(_T(szBuff));
 
 	return; 
 
@@ -286,20 +276,6 @@ void CMainDlg::OnTimer(UINT nIDEvent)
 		ControlCamera(  (ECamControl)CAM_ZOOMSTOP, (BYTE)m_byRange );
 
 		KillTimer(TIMER_ZOOM);
-	}	
-	else if(nIDEvent == TIMER_DRAG_MOVE)
-	{
-		if(m_bDragMove)
-		{
-			m_bMoving = TRUE;
-		}
-		else
-		{
-
-			m_bMoving = FALSE;
-			m_bDragLBDown = FALSE;
-			KillTimer(TIMER_DRAG_MOVE);
-		}
 	}
 }
 
@@ -309,23 +285,14 @@ void CMainDlg::OnMouseMove(UINT nFlags, CPoint point)
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	if(!IsCoperate)
 	{
-		if(m_bDragMove && m_bMoving)
+		if (nFlags == MK_LBUTTON&&IsPtInRect(point))
 		{
-			m_bMoving = TRUE;
-			HCURSOR  hCursor=AfxGetApp()->LoadCursor(IDC_CURSOR1);
-			SetCursor(hCursor);	
-			CRect rcClient;
-			GetClientRect( &rcClient );
-			CPoint ptCenterClient = rcClient.CenterPoint();
-			CPoint pointCopy;
-			pointCopy.x = (ptCenterClient.x + m_pointDrag.x - point.x);
-			pointCopy.y = (ptCenterClient.y + m_pointDrag.y - point.y);
-			CenterPos( pointCopy );
-			//IPC_PTZControlEx(m_hHandle,0,CAM_GOTOPT,pointCopy.x ,pointCopy.y );
-			m_pointDrag.x = point.x;
-			m_pointDrag.y = point.y;
+			HCURSOR hCursor;
+			hCursor = ::LoadCursor(NULL,IDC_HAND);
+			SetCursor(hCursor);
+			IsMove=true;
+			m_move=m_start;
 		}
-
 	}
 
 	CDialog::OnMouseMove(nFlags, point);
@@ -344,21 +311,7 @@ void CMainDlg::OnLButtonDown(UINT nFlags, CPoint point)
 	// TODO: 在此添加消息处理程序代码和/或调用默认值	
 	if(!IsCoperate)
 	{
-		if(m_bDragMove)
-		{
-			m_bMoving     = TRUE;
-			m_bDragLBDown = TRUE;
-			m_pointDrag.x = point.x;
-			m_pointDrag.y = point.y;
-			SetTimer(TIMER_DRAG_MOVE, 150, NULL);
-			
-			HCURSOR  hCursor=AfxGetApp()->LoadCursor(IDC_CURSOR1);
-			SetCursor(hCursor);	
-			CRect cClient;
-			GetClientRect(&cClient); //获得客户区范围
-			ClientToScreen(&cClient); //转化为屏幕坐标        
-			
-		}
+		m_start = point;	
 	}
 	CDialog::OnLButtonDown(nFlags, point);
 }
@@ -368,17 +321,14 @@ void CMainDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 	if(!IsCoperate)
 	{
-		if(m_bDragMove)		//拖动屏幕
-		{
-			KillTimer(TIMER_DRAG_MOVE);
+		if(IsMove)
+		{   
+			IsMove=false;
+			char chX = (char)m_move.x ;
+			char chY = (char)m_move.y ;
 
-			m_bMoving     = FALSE;
-			m_bDragLBDown = FALSE;
-			
-			HCURSOR  hCursor = ::LoadCursor(NULL,IDC_ARROW );
-			SetCursor(hCursor);	
-		}	
-
+			IPC_PTZControlEx(m_hHandle,0,CAM_GOTOPT,chX,chY);
+		}
 	}
 	else
 	{
@@ -500,7 +450,7 @@ void CMainDlg::OnLButtonUp(UINT nFlags, CPoint point)
 
 LRESULT CMainDlg::OnMyMsgHandlerShow(WPARAM wParam, LPARAM lParam)
 {
-
+	AfxMessageBox("show11"); 
 	// 取得播放窗口句柄
 	hPlayWnd = GetDlgItem(IDC_STATIC_VIDEO)->GetSafeHwnd();
 
@@ -533,13 +483,12 @@ LRESULT CMainDlg::OnMyMsgHandlerShow(WPARAM wParam, LPARAM lParam)
 			AfxMessageBox( str );
 		}
 	}
-	AfxMessageBox("实验系统初始化成功"); 
 	return 0;
 }
 
 LRESULT CMainDlg::OnMyMsgHandlerPhoto(WPARAM wParam, LPARAM lParam)
 {
-	//AfxMessageBox("photo"); 
+	AfxMessageBox("photo"); 
 
 	if( m_bPlayStat)
 	{
@@ -565,7 +514,7 @@ LRESULT CMainDlg::OnMyMsgHandlerPhoto(WPARAM wParam, LPARAM lParam)
 
 LRESULT CMainDlg::OnMyMsgHandlerVideo(WPARAM wParam, LPARAM lParam)
 {
-	//AfxMessageBox("video"); 
+	AfxMessageBox("video"); 
 	// TODO: 在此添加控件通知处理程序代码
 	CString strTemp;
 
@@ -617,7 +566,7 @@ LRESULT CMainDlg::OnMyMsgHandlerVideo(WPARAM wParam, LPARAM lParam)
 
 LRESULT CMainDlg::OnMyMsgHandlerOperate(WPARAM wParam, LPARAM lParam)
 {
-	//AfxMessageBox("operate"); 
+	AfxMessageBox("operate"); 
 	int nData=1;
 	ControlCamera( CAM_PRESETCALL, nData );
 	IsCoperate = true ;
@@ -626,9 +575,8 @@ LRESULT CMainDlg::OnMyMsgHandlerOperate(WPARAM wParam, LPARAM lParam)
 
 LRESULT CMainDlg::OnMyMsgHandlerNOperate(WPARAM wParam, LPARAM lParam)
 {
-	//AfxMessageBox("noperate"); 
+	AfxMessageBox("noperate"); 
 	IsCoperate = false ;
-	m_bDragMove = TRUE;
 	return 0;
 }
 
@@ -695,35 +643,4 @@ BOOL CMainDlg::StopLocRec(CString &strFileName)
 BOOL CMainDlg::IsLocRec() 
 {
 	return IPC_IsLocalRecording( m_hPlayer );
-}
-
-BOOL CMainDlg::IsDragMove()
-{
-	return m_bDragMove;
-}
-
-void CMainDlg::CenterPos(const CPoint& point)
-{
-    CRect rcClient;
-    GetClientRect( &rcClient );
-    CPoint ptCenterClient = rcClient.CenterPoint();
-		
-	int  nx = point.x * MAX_ALEC_WIDE / rcClient.Width();
-	int  ny = point.y * MAX_ALEC_HIGH / rcClient.Height();
-
-	BYTE byX = nx > 254 ? (254) : (nx < 0 ? 0 : nx);
-	BYTE byY = ny > 254 ? (254) : (ny < 0 ? 0 : ny);
-    
-    char chX = byX - 127;
-	char chY = 127 - byY;
-	ASSERT((chX >= -127) && (chX <= 127));
-	ASSERT((chY >= -127) && (chY <= 127));
-    
-    // 发送操作指令
-    CPoint pt(chX, chY);
-    TRACE("点击居中, X:%d, Y:%d\n", byX, byY);
-	if(byX != 127 || byY != 127)
-	{
-		IPC_PTZControlEx(m_hHandle,0,CAM_GOTOPT,chX ,chY);
-	}	
 }
