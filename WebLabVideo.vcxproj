@@ -129,6 +129,10 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="..\res\hand-open.cur" />
+    <None Include="cursor1.cur" />
+    <None Include="cursor2.cur" />
+    <None Include="cursor3.cur" />
     <None Include="ReadMe.txt" />
     <None Include="WebLabVideo.def" />
     <None Include="WebLabVideo.ico" />

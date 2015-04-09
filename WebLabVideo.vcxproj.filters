@@ -26,6 +26,18 @@
       <Filter>资源文件</Filter>
     </None>
     <None Include="WebLabVideo.lic" />
+    <None Include="cursor1.cur">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="cursor2.cur">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="cursor3.cur">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="..\res\hand-open.cur">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
